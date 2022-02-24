@@ -1,32 +1,4 @@
 function [R,Q,S,T,P_w] = MTEO_qrst(ecg,fs,gr)
-%% ======== Delineates ECG based on MTEO Algorithm ============== %%
-% Employs Multilevel Teager Energy Operator to delineate ECG. To see how
-% MTEO is computed please see my paper and cite it if you are interested
-% in using this code.
-%%%%%
-% Ref : H. Sedghamiz and D. Santonocito,’’Unsupervised Detection and 
-% Classification of Motor Unit Action Potentials in Intramuscular 
-% Electromyography Signals’’, The 5th IEEE International Conference 
-% on E-Health and Bioengineering - EHB 2015, At Iasi-Romania. 
-%% ============== Licensce ========================================== %%
-% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
-% "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
-% LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-% FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-% OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
-% SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
-% TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-% PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-% LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
-% NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-% Author :
-% Hooman Sedghamiz, Feb, 2018
-% MSc. Biomedical Engineering, Linkoping University
-% Email : Hooman.sedghamiz@gmail.com
-
-%% Initilization
-
 ecg = ecg (:);                    % make sure its a vector
 N = length(ecg);                  % Data length
 L = round(2*fs);                  % to set the initial threshold
@@ -205,7 +177,7 @@ C = 0; % Counter for blankperiod
         
         elseif ((init_p - S_R) <= 0)
         temp_sg = ecg1(1:init_p+S_R)-BS;
-        [~,tmp] = findpeaks(abs(temp_sg));
+        [~,tmp] = findpeaks(abs(temp_sg),"DoubleSided");
         
             if ~isempty(tmp)
             [~,r] = min(abs(tmp-init_p)); 
@@ -215,7 +187,7 @@ C = 0; % Counter for blankperiod
         
         r = tmp(r);
         elseif (init_p + S_R) > (N-3)
-        [~,tmp] = findpeaks(abs(ecg1(init_p - S_R:end)-BS));
+        [~,tmp] = findpeaks(abs(ecg1(init_p - S_R:end)-BS),"DoubleSided");
             
             if ~isempty(tmp)
              [~,r] = min(abs(tmp-S_R));
@@ -340,8 +312,8 @@ function r = locate_r(sig)
 % Sig : Sequence
 %% Output
 % r : Peak index
-[~,tmp] = findpeaks(sig);
-[~,tmp1] = findpeaks(-sig);
+[~,tmp] = findpeaks(sig,"DoubleSided");
+[~,tmp1] = findpeaks(-sig,"DoubleSided");
 mid_point = round(length(sig)*0.5);
 
  if ~isempty(tmp)
@@ -382,7 +354,7 @@ if ~TH_p
 end
 sig = sig - mean(sig);  
  p = NaN(2,1);
-[amps,locs] = findpeaks(abs(sig));
+[amps,locs] = findpeaks(abs(sig),"DoubleSided");
 
 
 if ~isempty(locs)
@@ -426,8 +398,8 @@ function q = locate_q(sig)
 
 
  q = [];
- [~,locs] = findpeaks(sig);
- [~,locs1] = findpeaks(-sig);
+ [~,locs] = findpeaks(sig,"DoubleSided");
+ [~,locs1] = findpeaks(-sig,"DoubleSided");
  
  if ~isempty(locs)
  locs = locs(end);
@@ -463,8 +435,8 @@ function s = locate_s(sig)
 % P(2) : Peak index
 
  s = [];
- [~,locs] = findpeaks(sig);
- [~,locs1] = findpeaks(-sig);
+ [~,locs] = findpeaks(sig,"DoubleSided");
+ [~,locs1] = findpeaks(-sig,"DoubleSided");
  
  if ~isempty(locs)
  locs = locs(1);
@@ -479,7 +451,7 @@ function s = locate_s(sig)
   s(1) = sig(s(2));
  else
   
-  [~,locs]=findpeaks(diff(sig));
+  [~,locs]=findpeaks(diff(sig),"DoubleSided");
   if isempty(locs)
      [~,locs] = max(diff(sig,2)); 
   else
@@ -504,7 +476,7 @@ function t = locate_t(sig,TH_t)
      TH_t = mean(sig);
  end
  
- [count,count_i]=findpeaks(abs(sig));
+ [count,count_i]=findpeaks(abs(sig),"DoubleSided");
  
 if ~isempty(count)
  TF = (count >= TH_t);
@@ -534,7 +506,7 @@ end
  template = sig(init_index:end);
  
  if length(template) > 5
-    [amps,locs] = findpeaks(abs(sig(init_index:end))); 
+    [amps,locs] = findpeaks(abs(sig(init_index:end)),"DoubleSided"); 
  else
      amps = [];
      locs = [];
@@ -555,11 +527,11 @@ end
         t(1) = sig(t(2)); 
     else                                      % lower than TH1 might be P
                                               % look for second steep slope 
-      [amps,locs] = findpeaks(abs(d_sig(1:init_index)));    
+      [amps,locs] = findpeaks(abs(d_sig(1:init_index)),"DoubleSided");    
         if ~isempty(locs)
            [~,tmp] = max(amps);
            tmp_i = locs(tmp);
-           [amps,locs] = findpeaks(abs(sig(tmp_i:end)));
+           [amps,locs] = findpeaks(abs(sig(tmp_i:end)),"DoubleSided");
            if~isempty(locs)
              TF = (amps >= TH_t);
              locs = locs(TF);
@@ -576,7 +548,7 @@ end
 
  else
      
- [amps,locs] = findpeaks(abs(sig));
+ [amps,locs] = findpeaks(abs(sig),"DoubleSided");
  TF = (amps >= TH_t);
  locs = locs(TF);
  amps = amps(TF);
